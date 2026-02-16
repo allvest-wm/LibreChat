@@ -1,8 +1,11 @@
+/* eslint-disable no-nested-ternary */
 import React from 'react';
 import { useLocalize } from '~/hooks';
 import { Tools } from 'librechat-data-provider';
 import { UIResourceRenderer } from '@mcp-ui/client';
 import UIResourceCarousel from './UIResourceCarousel';
+import PortfolioChart from './PortfolioChart';
+import HTMLFormRenderer from './HTMLFormRenderer';
 import type { TAttachment, UIResource } from 'librechat-data-provider';
 
 function OptimizedCodeBlock({ text, maxHeight = 320 }: { text: string; maxHeight?: number }) {
@@ -63,7 +66,7 @@ export default function ToolCallInfo({
       .flatMap((attachment) => {
         return attachment[Tools.ui_resources] as UIResource[];
       }) ?? [];
-
+  console.log('Extracted UI Resources:', uiResources);
   return (
     <div className="w-full p-2">
       <div style={{ opacity: 1 }}>
@@ -88,15 +91,24 @@ export default function ToolCallInfo({
               {uiResources.length > 1 && <UIResourceCarousel uiResources={uiResources} />}
 
               {uiResources.length === 1 && (
-                <UIResourceRenderer
-                  resource={uiResources[0]}
-                  onUIAction={async (result) => {
-                    console.log('Action:', result);
-                  }}
-                  htmlProps={{
-                    autoResizeIframe: { width: true, height: true },
-                  }}
-                />
+                <>
+                  {console.log('UI Resource ===========>:', uiResources[0])}
+                  {uiResources[0].type === 'portfolio_chart' ? (
+                    <PortfolioChart resource={uiResources[0]} />
+                  ) : uiResources[0].type === 'html_form' || uiResources[0].type === 'questionnaire' ? (
+                    <HTMLFormRenderer resource={uiResources[0]} />
+                  ) : (
+                    <UIResourceRenderer
+                      resource={uiResources[0]}
+                      onUIAction={async (result) => {
+                        console.log('Action:', result);
+                      }}
+                      htmlProps={{
+                        autoResizeIframe: { width: true, height: true },
+                      }}
+                    />
+                  )}
+                </>
               )}
             </div>
           </>

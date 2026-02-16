@@ -9,6 +9,7 @@ import type { ChatFormValues } from '~/common';
 import { ChatContext, AddedChatContext, useFileMapContext, ChatFormProvider } from '~/Providers';
 import { useAddedResponse, useResumeOnLoad, useAdaptiveSSE, useChatHelpers } from '~/hooks';
 import ConversationStarters from './Input/ConversationStarters';
+import SuggestedPrompts from './Input/SuggestedPrompts';
 import { useGetMessagesByConvoId } from '~/data-provider';
 import MessagesView from './Messages/MessagesView';
 import Presentation from './Presentation';
@@ -100,7 +101,14 @@ function ChatView({ index = 0 }: { index?: number }) {
                     )}
                   >
                     <ChatForm index={index} />
-                    {isLandingPage ? <ConversationStarters /> : <Footer />}
+                    {isLandingPage ? (
+                      <>
+                        <SuggestedPrompts />
+                        <ConversationStarters />
+                      </>
+                    ) : (
+                      <Footer />
+                    )}
                   </div>
                 </div>
                 {isLandingPage && <Footer />}

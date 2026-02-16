@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
 import { UIResourceRenderer } from '@mcp-ui/client';
 import type { UIResource } from 'librechat-data-provider';
-import { useMessagesOperations } from '~/Providers';
-import { handleUIAction } from '~/utils';
+import PortfolioChart from './PortfolioChart';
+import HTMLFormRenderer from './HTMLFormRenderer';
 
 interface UIResourceCarouselProps {
   uiResources: UIResource[];
@@ -13,7 +13,6 @@ const UIResourceCarousel: React.FC<UIResourceCarouselProps> = React.memo(({ uiRe
   const [showRightArrow, setShowRightArrow] = useState(true);
   const [isContainerHovered, setIsContainerHovered] = useState(false);
   const scrollContainerRef = React.useRef<HTMLDivElement>(null);
-  const { ask } = useMessagesOperations();
 
   const handleScroll = React.useCallback(() => {
     if (!scrollContainerRef.current) return;
@@ -73,7 +72,7 @@ const UIResourceCarousel: React.FC<UIResourceCarouselProps> = React.memo(({ uiRe
         <button
           type="button"
           onClick={() => scroll('left')}
-          className={`absolute left-2 top-1/2 z-20 -translate-y-1/2 rounded-xl bg-white p-2 text-gray-800 shadow-lg transition-all duration-200 hover:scale-110 hover:bg-gray-100 hover:shadow-xl active:scale-95 dark:bg-gray-200 dark:text-gray-800 dark:hover:bg-gray-300 ${
+          className={`absolute left-2 top-1/2 z-20 -translate-y-1/2 rounded-xl bg-white p-2 text-gray-800 shadow-lg transition-all duration-200 hover:scale-110 hover:bg-gray-100 hover:shadow-xl active:scale-95 dark:bg-black dark:text-gray-800 dark:hover:bg-[#0d0d0d] ${
             isContainerHovered ? 'opacity-100' : 'pointer-events-none opacity-0'
           }`}
           aria-label="Scroll left"
@@ -94,8 +93,10 @@ const UIResourceCarousel: React.FC<UIResourceCarouselProps> = React.memo(({ uiRe
         className="hide-scrollbar flex gap-4 overflow-x-auto scroll-smooth"
       >
         {uiResources.map((uiResource, index) => {
-          const height = 360;
-          const width = 230;
+          const isPortfolioChart = uiResource.type === 'portfolio_chart';
+          const isQuestionnaire = uiResource.type === 'questionnaire' || uiResource.type === 'html_form';
+          const height = isPortfolioChart ? 400 : isQuestionnaire ? 500 : 360;
+          const width = isPortfolioChart ? 500 : isQuestionnaire ? 650 : 230;
 
           return (
             <div
@@ -108,17 +109,25 @@ const UIResourceCarousel: React.FC<UIResourceCarouselProps> = React.memo(({ uiRe
               }}
             >
               <div className="flex h-full flex-col">
-                <UIResourceRenderer
-                  resource={{
-                    uri: uiResource.uri,
-                    mimeType: uiResource.mimeType,
-                    text: uiResource.text,
-                  }}
-                  onUIAction={async (result) => handleUIAction(result, ask)}
-                  htmlProps={{
-                    autoResizeIframe: { width: true, height: true },
-                  }}
-                />
+                {isPortfolioChart ? (
+                  <PortfolioChart resource={uiResource} />
+                ) : isQuestionnaire ? (
+                  <HTMLFormRenderer resource={uiResource} />
+                ) : (
+                  <UIResourceRenderer
+                    resource={{
+                      uri: uiResource.uri,
+                      mimeType: uiResource.mimeType,
+                      text: uiResource.text,
+                    }}
+                    onUIAction={async (result) => {
+                      console.log('Action:', result);
+                    }}
+                    htmlProps={{
+                      autoResizeIframe: { width: true, height: true },
+                    }}
+                  />
+                )}
               </div>
             </div>
           );
@@ -129,7 +138,7 @@ const UIResourceCarousel: React.FC<UIResourceCarouselProps> = React.memo(({ uiRe
         <button
           type="button"
           onClick={() => scroll('right')}
-          className={`absolute right-2 top-1/2 z-20 -translate-y-1/2 rounded-xl bg-white p-2 text-gray-800 shadow-lg transition-all duration-200 hover:scale-110 hover:bg-gray-100 hover:shadow-xl active:scale-95 dark:bg-gray-200 dark:text-gray-800 dark:hover:bg-gray-300 ${
+          className={`absolute right-2 top-1/2 z-20 -translate-y-1/2 rounded-xl bg-white p-2 text-gray-800 shadow-lg transition-all duration-200 hover:scale-110 hover:bg-gray-100 hover:shadow-xl active:scale-95 dark:bg-black dark:text-gray-800 dark:hover:bg-[#0d0d0d] ${
             isContainerHovered ? 'opacity-100' : 'pointer-events-none opacity-0'
           }`}
           aria-label="Scroll right"
