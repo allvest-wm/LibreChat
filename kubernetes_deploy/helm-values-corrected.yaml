@@ -1,0 +1,298 @@
+# LibreChat Helm Values - Corrected Version
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+replicaCount: 1
+
+global:
+  librechat:
+    # Secret containing sensitive environment variables
+    # Create with: kubectl create secret generic librechat-credentials-env --from-env-file=.env
+    existingSecretName: "librechat-credentials-env"
+    # API key field name in the secret
+    existingSecretApiKey: OPENAI_API_KEY
+
+librechat:
+  configEnv:
+    # Application Settings
+    HOST: "0.0.0.0"
+    PORT: "3080"
+
+    # Update these with your actual domain
+    DOMAIN_CLIENT: "https://intelligent-chatbot-frontend-dev.allvestfinance.in"
+    DOMAIN_SERVER: "https://intelligent-chatbot-frontend-dev.allvestfinance.in"
+
+    # MongoDB Configuration
+    # MONGO_URI: "mongodb://librechat-mongodb:27017/LibreChat"
+    MONGO_URI: mongodb://librechat-mongodb.librechat.svc.cluster.local:27017/LibreChat
+
+    # Search Configuration
+    SEARCH: "true"
+    MEILI_NO_ANALYTICS: "true"
+    MEILI_HOST: "http://librechat-meilisearch:7700"
+
+    # Plugin Configuration
+    PLUGIN_MODELS: "gpt-4,gpt-4-turbo-preview,gpt-4-0125-preview,gpt-4-1106-preview,gpt-4-0613,gpt-3.5-turbo,gpt-3.5-turbo-0125,gpt-3.5-turbo-1106,gpt-3.5-turbo-0613"
+    DEBUG_PLUGINS: "true"
+
+    # Authentication & Registration
+    ALLOW_EMAIL_LOGIN: "true"
+    ALLOW_REGISTRATION: "true"
+    ALLOW_SOCIAL_LOGIN: "true"
+    ALLOW_SOCIAL_REGISTRATION: "false"
+    ALLOW_UNVERIFIED_EMAIL_LOGIN: "true"
+
+    # Logging
+    DEBUG_LOGGING: "true"
+    CONSOLE_JSON: "false"
+
+    # Other Settings
+    NO_INDEX: "true"
+    TRUST_PROXY: "true"
+    ENDPOINTS: "custom"
+
+    # Cookie Configuration - CRITICAL FOR CROSS-SUBDOMAIN
+    COOKIE_DOMAIN: ".allvestfinance.in"
+    COOKIE_SAME_SITE: "none"
+    COOKIE_SECURE: "true"
+
+    # Force HTTPS
+    FORCE_HTTPS: "true"
+
+    #Openid
+    OPENID_ISSUER: "https://keycloak-non-prod.allvestfinance.in/realms/DEV"
+    OPENID_CLIENT_ID: "frontend-app"
+    OPENID_CLIENT_SECRET: "sXpwiQasPPhO8SaZmaZ14i2tUi23Wht7"
+    OPENID_CALLBACK_URL: "/oauth/openid/callback"
+    OPENID_SCOPE: "openid profile email"
+    OPENID_SESSION_SECRET: "9b8f6b1c70706de4d3acd1e044972605d597c33d65ee5740f91eadfa8014c31a"
+    SESSION_SECRET: "9b8f6b1c70706de4d3acd1e044972605d597c33d65ee5740f91eadfa8014c31a"
+    SESSION_EXPIRY: 1000 * 60 * 15
+    OPENID_BUTTON_LABEL: "Login with Allvest"
+    OPENID_REUSE_TOKENS: "true"
+
+    # Environment
+    NODE_ENV: "production"
+
+    # Debug (optional, for troubleshooting)
+    DEBUG_OPENID: "true"
+    DEBUG_OPENID_REQUESTS: "true"
+
+    CUSTOM_FOOTER: "⚠️ Investments are subject to market risks. Please do your own research."
+
+    # ⚠️ SECURITY: Move these to Kubernetes Secret!
+    # These should NOT be in values.yaml - they should be in your secret
+    # CREDS_KEY: <in-secret>
+    # CREDS_IV: <in-secret>
+    # JWT_SECRET: <in-secret>
+    # JWT_REFRESH_SECRET: <in-secret>
+    # MEILI_MASTER_KEY: <in-secret>
+
+  # Reference to existing secret for sensitive values
+  existingSecretName: "librechat-credentials-env"
+
+  # LibreChat Configuration File
+  configYamlContent: |
+    version: 1.2.8
+    cache: true
+    endpoints:
+      custom:
+        - name: "Smart Allvest"
+          apiKey: "dummy-api-key-or-any-string"
+          baseURL: "https://intelligent-chatbot-adapter-api-dev.allvestfinance.in"
+          models:
+            default: ["Allvest AI"]
+            fetch: false
+          titleConvo: true
+          summarize: false
+          modelDisplayLabel: "Allvest AI"
+          stream: true
+          streamRate: 20
+
+          headers:
+            X-User-ID: "{{LIBRECHAT_USER_ID}}"
+            X-User-Email: "{{LIBRECHAT_USER_EMAIL}}"
+            X-User-Username: "{{LIBRECHAT_USER_USERNAME}}"
+            X-User-Name: "{{LIBRECHAT_USER_NAME}}"
+            X-Keycloak-Token: "{{LIBRECHAT_OPENID_ACCESS_TOKEN}}"
+
+            X-Conversation-Id: "{{LIBRECHAT_BODY_CONVERSATIONID}}"
+            X-Session-Id: "{{LIBRECHAT_BODY_CONVERSATIONID}}"
+            X-Message-Id: "{{LIBRECHAT_BODY_MESSAGEID}}"
+            X-Parent-Message-Id: "{{LIBRECHAT_BODY_PARENTMESSAGEID}}"
+
+
+  # Volume for uploaded images
+  imageVolume:
+    enabled: true
+    size: 10Gi
+    accessModes: ReadWriteOnce
+    # storageClassName: standard  # Uncomment and set if needed
+
+# RAG API Configuration (disabled as per your setup)
+librechat-rag-api:
+  enabled: false
+  embeddingsProvider: openai
+
+# Container Image
+# image:
+#   repository: danny-avila/librechat
+#   registry: ghcr.io
+#   pullPolicy: IfNotPresent
+#   tag: ""  # Uses chart appVersion by default
+image:
+  pullPolicy: Always
+  registry: asia-south1-docker.pkg.dev
+  repository: project-avs-ops/prj-avs-gar-staging/librechat
+  tag: latest
+
+imagePullSecrets: []
+nameOverride: ""
+fullnameOverride: ""
+
+# Service Account
+serviceAccount:
+  create: true
+  automount: true
+  annotations: {}
+  name: ""
+
+lifecycle: {}
+
+podAnnotations: {}
+podLabels: {}
+deploymentAnnotations: {}
+deploymentLabels: {}
+
+podSecurityContext:
+  fsGroup: 2000
+
+securityContext:
+  capabilities:
+    drop:
+    - ALL
+  runAsNonRoot: true
+  runAsUser: 1000
+
+# Service Configuration
+service:
+  type: ClusterIP
+  port: 3080
+  targetPort: 3080
+  containerPort: 3080
+  annotations: {}
+
+# Ingress Configuration
+ingress:
+  enabled: true
+  className: ""
+  annotations:
+    # Add annotations based on your ingress controller
+    # nginx example:
+    # kubernetes.io/ingress.class: nginx
+    # cert-manager.io/cluster-issuer: letsencrypt-prod
+  hosts:
+    - host: intelligent-chatbot-frontend-dev.allvestfinance.in  # ⚠️ UPDATE THIS
+      paths:
+        - path: /
+          pathType: ImplementationSpecific
+  tls:
+    - secretName: librechat-tls  # ⚠️ UPDATE THIS
+      hosts:
+        - intelligent-chatbot-frontend-dev.allvestfinance.in  # ⚠️ UPDATE THIS
+
+# Resource Limits (recommended to set for production)
+resources:
+  limits:
+    cpu: 2000m
+    memory: 2Gi
+  requests:
+    cpu: 500m
+    memory: 512Mi
+
+# Autoscaling
+autoscaling:
+  enabled: false
+  minReplicas: 1
+  maxReplicas: 5
+  targetCPUUtilizationPercentage: 80
+  # targetMemoryUtilizationPercentage: 80
+
+# Health Checks
+livenessProbe:
+  httpGet:
+    path: /health
+    port: 3080
+  initialDelaySeconds: 30
+  periodSeconds: 10
+
+readinessProbe:
+  httpGet:
+    path: /health
+    port: 3080
+  initialDelaySeconds: 10
+  periodSeconds: 5
+
+# Additional init containers
+initContainers: {}
+
+# Additional volumes
+volumes: []
+
+# Additional volumeMounts
+volumeMounts: []
+
+nodeSelector: {}
+
+tolerations: []
+
+affinity: {}
+
+# Host aliases
+hostAliases: []
+
+# DNS Configuration
+dnsPolicy: ""
+dnsConfig: {}
+
+# Update Strategy
+updateStrategy:
+  type: RollingUpdate
+  rollingUpdate:
+    maxSurge: 1
+    maxUnavailable: 0
+
+# Additional ConfigMaps
+additionalConfigMaps: {}
+
+# ==========================================
+# MongoDB Configuration
+# ==========================================
+mongodb:
+  enabled: true
+  auth:
+    enabled: false  # ⚠️ Consider enabling auth for production
+    # rootPassword: <set-in-secret>
+  databases:
+    - LibreChat
+  persistence:
+    enabled: true
+    size: 8Gi
+    # storageClass: standard  # Uncomment if needed
+
+# ==========================================
+# Meilisearch Configuration
+# ==========================================
+meilisearch:
+  enabled: true
+  persistence:
+    enabled: true
+    size: 2Gi
+    # storageClass: standard  # Uncomment if needed
+  image:
+    tag: "v1.12.3"  # ✅ Updated to match docker-compose
+  auth:
+    # Reference to existing secret containing MEILI_MASTER_KEY
+    existingMasterKeySecret: "librechat-credentials-env"
+  environment:
+    MEILI_NO_ANALYTICS: "true"
